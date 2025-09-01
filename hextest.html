@@ -1,0 +1,22 @@
+<script type="module">
+  import { appendScriptV1, packMainPyAuto } from './calliope-hex-tools.js';
+
+  // Lade deine Calliope-Firmware-HEX als Basis (z. B. aus https://github.com/calliope-mini/... build)
+  const baseHex = await fetch('./firmware/calliope12-micropython.hex').then(r => r.text());
+
+  const python = `from time import sleep
+from calliope_mini import display
+while True:
+    display.scroll("Hi!")
+    sleep(1)`;
+
+  // V3-Pfad (FS), sonst Fallback:
+  const outHex = await packMainPyAuto(baseHex, python);
+
+  // Download anbieten:
+  const blob = new Blob([outHex], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'calliope-main.hex';
+  a.click();
+</script>

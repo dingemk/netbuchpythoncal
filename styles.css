@@ -1,0 +1,341 @@
+/* Python-IDE Styles */
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+#workarea {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Editor links */
+#left {
+    flex: 0 0 50%;
+    min-width: 200px;
+    max-width: 80%;
+    display: flex;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Laufen-Icon und Notfall-Reset mittig in der Kopfleiste */
+.run-icon-center {
+    position: absolute;
+    left: 25%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.run-icon {
+    display: inline-block;
+    background: #28a745;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    font-size: 20px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.run-icon:hover {
+    background: #218838;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.run-icon:active {
+    transform: scale(0.95);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+#editor {
+    flex: 1 1 auto;
+    min-height: 0;
+    border-right: 2px solid #e5e7eb;
+    width: 100%;
+}
+
+/* vertikaler Resizer */
+#resizer {
+    flex: 0 0 8px !important;
+    background: #e5e7eb !important;
+    cursor: col-resize !important;
+    user-select: none !important;
+    position: relative !important;
+    z-index: 100 !important;
+    min-width: 8px !important;
+    max-width: 8px !important;
+    border-left: 1px solid #d1d5db !important;
+    border-right: 1px solid #d1d5db !important;
+}
+
+/* rechts: Canvas + Output */
+#right {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 260px;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+#canvas-wrap {
+    flex: 1 1 auto;
+    min-height: 140px;
+    max-height: 80%;
+    border-bottom: 2px solid #e5e7eb;
+    display: flex;
+    position: relative;
+}
+
+#canvas {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #fafafa;
+}
+
+#resizer-h {
+    height: 8px !important;
+    background: #e5e7eb !important;
+    cursor: row-resize !important;
+    user-select: none !important;
+    min-height: 8px !important;
+    max-height: 8px !important;
+    border-top: 1px solid #d1d5db !important;
+    border-bottom: 1px solid #d1d5db !important;
+    z-index: 100 !important;
+}
+
+/* Output: hell */
+#output {
+    flex: 1 1 0; /* Feste Größe, wächst nicht mit Inhalt */
+    background: #ffffff;
+    color: #111;
+    padding: 8px;
+    overflow-y: auto; /* Nur vertikale Scrollbar */
+    overflow-x: hidden; /* Keine horizontale Scrollbar */
+    white-space: pre-wrap; /* Behält Zeilenumbrüche */
+    min-height: 80px;
+    max-height: 300px; /* Maximale Höhe */
+    border-top: 1px solid #e5e7eb;
+    line-height: 1.4;
+    resize: none; /* Keine manuelle Größenänderung */
+}
+
+/* Dateiliste */
+#files-panel {
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    height: 200px; /* Standard-Höhe für Layouts mit Canvas */
+    max-height: 200px;
+    min-height: 150px;
+    overflow-y: auto;
+    flex-shrink: 0; /* Verhindert Schrumpfen */
+    flex-basis: 200px; /* Feste Basis-Größe */
+}
+
+/* Spezielle Höhe für Layout "Output + Dateien" (ohne Canvas) */
+#files-panel.layout-output-files {
+    height: 30vh !important; /* 30% der Viewport-Höhe */
+    max-height: 30vh !important;
+    flex-basis: 30vh !important;
+}
+
+/* Output-Bereich für Layout "Output + Dateien" */
+#output.layout-output-files {
+    height: 70vh !important; /* 70% der Viewport-Höhe */
+    max-height: 70vh !important;
+    flex-basis: 70vh !important;
+}
+
+/* Lizenz-Modal Styling */
+.license-section {
+    border-left: 4px solid #007bff;
+    padding-left: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.license-section h6 {
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.license-section p {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.license-section a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.license-section a:hover {
+    text-decoration: underline;
+}
+
+/* Impressum-Modal Styling */
+.impressum-section {
+    border-left: 4px solid #28a745;
+    padding-left: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.impressum-section h6 {
+    color: #28a745;
+    margin-bottom: 10px;
+}
+
+.impressum-section p {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.impressum-section a {
+    color: #28a745;
+    text-decoration: none;
+}
+
+.impressum-section a:hover {
+    text-decoration: underline;
+}
+
+.impressum-section ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+.impressum-section li {
+    margin-bottom: 5px;
+}
+
+/* Dropdown-Menüs */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    min-width: 150px;
+    right: 0;
+    left: auto;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+}
+
+
+
+.dropdown-item {
+    display: block;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #333;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #eee;
+    margin: 4px 0;
+}
+
+.dropdown-header {
+    padding: 8px 16px;
+    color: #666;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+/* Beispiele Modal */
+.example-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 2px solid transparent;
+    margin-bottom: 0.75rem;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+}
+
+.example-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.example-card.selected {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+.example-image {
+    width: 100%;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+}
+
+.example-title {
+    text-align: center;
+    margin-top: 0.375rem;
+    font-weight: bold;
+    color: #495057;
+    font-size: 0.8rem;
+}
+
+/* Run-Icon optisch deaktivieren */
+.run-icon.disabled {
+  opacity: .5;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* „unsichtbar“ schalten */
+.hidden {
+  display: none !important;
+}

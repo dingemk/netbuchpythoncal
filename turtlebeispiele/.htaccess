@@ -1,0 +1,7 @@
+RemoveHandler .py
+AddType text/plain .py
+# oder:
+<FilesMatch "\.py$">
+  SetHandler none
+  ForceType text/plain
+</FilesMatch>
