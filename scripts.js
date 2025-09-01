@@ -2,20 +2,17 @@
 (function () {
   // ========== Monaco ==========
   require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" } });
-  let editor;
-  require(["vs/editor/editor.main"], function () {
-    const startCode = sessionStorage.getItem('pythonide-editor-content') || "";
-    editor = monaco.editor.create(document.getElementById("editor"), {
-      value: startCode, language: "python", theme: "vs", automaticLayout: true, fontSize: 14
-    });
-    window.editor = editor;
-    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, runCode);
-    editor.onDidChangeModelContent(function () {
-      const current = editor.getValue();
-      if (current.trim()) sessionStorage.setItem('pythonide-editor-content', current);
-      else sessionStorage.removeItem('pythonide-editor-content');
-    });
+
+require(["vs/editor/editor.main"], function () {
+  const startCode = sessionStorage.getItem('pythonide-editor-content') || "";
+  window.editor = monaco.editor.create(document.getElementById("editor"), {
+    value: startCode,
+    language: "python",
+    theme: "vs",
+    automaticLayout: true,
+    fontSize: 14
   });
+});
 
   // ========== Pyodide + IO ==========
   let pyodide;
@@ -577,8 +574,8 @@ let examples = [];
 if (examplesBtn) {
   examplesBtn.addEventListener("click", async function(e) {
     e.preventDefault();
-    await loadExamplesFromFolder();
-    showExamples();
+    await loadExamplesFromJson('data/examples.json');   // <— statt loadExamplesFromFolder()
+    showExamples();                                     // dein Rendering bleibt gleich
   });
 }
 
@@ -638,90 +635,113 @@ async function detectBase(baseFolder) {
   return preferred;
 }
 
-// ------- Loader je nach Gerät -------
-async function loadExamplesFromFolder() {
-  const dev = currentDevice();                        // 'none' | 'c12' | 'c3' | …
-  const isCalliope = (dev === 'c12' || dev === 'c3'); // Calliope erkannt
-  const folder = isCalliope ? 'calliopebeispiele' : 'turtlebeispiele';
-  const BASE = await detectBase(folder);
+async function loadExamplesFromJson(jsonUrl = 'data/examples.json') {
+  // 1) JSON holen
+  const res = await fetch(jsonUrl, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`JSON nicht ladbar: ${res.status} ${res.statusText}`);
+  const data = await res.json();
+  const items = Array.isArray(data?.examples) ? data.examples : [];
 
-  const list = [];
+  // 2) Gerätemodus
+  const dev = currentDevice();                         // 'none' | 'c12' | 'c3' | …
+  const isCalliope = (dev === 'c12' || dev === 'c3');
 
-  if (!isCalliope) {
-    // ---- Turtle-Modus (mit Bildern, Grid) ----
-    for (let i = 1; i <= 12; i++) {
-      const stem = `beispiel${i}`;
-      // Code-Datei mit Fallbacks
-      const codeHit = await (async () => {
-        const files = [`${stem}.py`, `${stem}.py.txt`, `${stem}.txt`];
-        for (const f of files) {
-          const url = joinUrl(BASE, f);
-          try {
-            const res = await fetch(url, { cache: "no-store" });
-            if (res.ok) return { url, text: await res.text() };
-          } catch {}
-        }
-        return null;
-      })();
-      if (!codeHit) continue;
+  // 3) Rohdaten normalisieren
+  let list = items
+    .map(e => ({
+      file: String(e.file || '').trim(),
+      name: String(e.name || '').trim() || (e.file ? e.file.split('/').pop() : 'Beispiel'),
+      image: e.image ? String(e.image).trim() : null,
+      runtime: String(e.runtime || '').toLowerCase().trim()  // 'python' | 'micropython'
+    }))
+    .filter(e => e.file && (e.runtime === 'python' || e.runtime === 'micropython'));
 
-      const imgUrl = await resolveImageUrl(BASE, stem);
-      list.push({
-        name: `Beispiel ${i}`,
-        file: codeHit.url,
-        image: imgUrl || joinUrl(BASE, "placeholder.png"),
-        description: `Python-Programm: Beispiel ${i}`,
-        code: codeHit.text,
-        kind: 'turtle'
-      });
-    }
+  // 4) Filtern nach Gerätemodus
+  if (isCalliope) {
+    list = list.filter(e => e.runtime === 'micropython');
   } else {
-    // ---- Calliope-Modus (ohne Bilder, Liste) ----
-    // Wir probieren beispiel1…beispiel20 sowie 01…20
-    const stems = [];
-    for (let i = 1; i <= 20; i++) stems.push(`beispiel${i}`, `beispiel${String(i).padStart(2,'0')}`);
-    const seen = new Set();
-    for (const stem of stems) {
-      if (seen.has(stem)) continue;
-      seen.add(stem);
-      const hit = await (async () => {
-        const files = [`${stem}.py`, `${stem}.py.txt`, `${stem}.txt`];
-        for (const f of files) {
-          const url = joinUrl(BASE, f);
-          try {
-            const res = await fetch(url, { cache: "no-store" });
-            if (res.ok) return { url, text: await res.text() };
-          } catch {}
-        }
-        return null;
-      })();
-      if (!hit) continue;
-      list.push({
-        name: stem.replace(/^beispiel/i, 'Beispiel '),
-        file: hit.url,
-        image: null,
-        description: `Calliope: ${stem}`,
-        code: hit.text,
-        kind: 'calliope'
-      });
-    }
+    // KEIN Gerät: NUR python – aber **nicht** mehr wegen fehlendem Bild wegfiltern
+    list = list.filter(e => e.runtime === 'python');
   }
 
-  if (list.length === 0) {
-    // Fallback-Eintrag
-    list.push({
-      name: isCalliope ? 'Beispiel 1 (Calliope – Fallback)' : 'Beispiel 1 (Turtle – Fallback)',
-      file: joinUrl(BASE, isCalliope ? 'beispiel1.py' : 'beispiel1.py.txt'),
-      image: isCalliope ? null : joinUrl(BASE, 'placeholder.png'),
-      description: 'Fallback',
-      code: isCalliope
-        ? '# Calliope-Fallback\nprint("Hallo Calliope!")\n'
-        : '# Turtle-Fallback\nforward(100)\nright(90)\nforward(100)\n',
+  // 5) Code und Bild/Fallbacks vorab laden
+  const out = [];
+  const placeholderImg =
+    'data:image/svg+xml;base64,' +
+    btoa('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="100%" height="100%" fill="#ddd"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#777" font-family="Arial" font-size="14">Kein Bild</text></svg>');
+
+  for (const ex of list) {
+    // Code-Kandidaten (.py, .py.txt)
+    const codeCandidates = [
+      ex.file,
+      './' + ex.file,
+      ex.file.endsWith('.py')     ? ex.file + '.txt'     : null,
+      ex.file.endsWith('.py.txt') ? ex.file.slice(0, -4) : null
+    ].filter(Boolean);
+
+    let codeText = null, usedUrl = null;
+    for (const url of codeCandidates) {
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) continue;
+        codeText = await r.text();
+        usedUrl = url;
+        break;
+      } catch {}
+    }
+    if (!codeText) continue; // ohne Code nicht anzeigen
+
+    // Bild bestimmen: vorhandenes nehmen, sonst versuchen abzuleiten, sonst Platzhalter
+    let img = ex.image;
+    if (!isCalliope) {
+      if (!img) {
+        // Bildname heuristisch aus Dateinamen ableiten: beispielX.(png|jpg|jpeg|webp)
+        const stem = ex.file.replace(/^.*\//, '')        // Dateiname
+                            .replace(/\.py(\.txt)?$/i, '') // Endung weg
+                            .replace(/\.txt$/i, '');
+        const base = ex.file.replace(/[^/]*$/, '');      // Verzeichnis
+        const exts = ['png','jpg','jpeg','webp','PNG','JPG','JPEG','WEBP'];
+        for (const ext of exts) {
+          const candidate = base + stem + '.' + ext;
+          try {
+            // HEAD → wenn nicht erlaubt, GET probieren
+            let rr = await fetch(candidate, { method: 'HEAD', cache: 'no-store' });
+            if (!rr.ok) rr = await fetch(candidate, { method: 'GET', cache: 'no-store' });
+            if (rr.ok) { img = candidate; break; }
+          } catch {}
+        }
+      }
+      if (!img) img = placeholderImg;
+    }
+
+    out.push({
+      name: ex.name,
+      file: usedUrl || ex.file,
+      image: isCalliope ? null : img,
+      description: isCalliope ? `Calliope: ${ex.name}` : `Python-Programm: ${ex.name}`,
+      code: codeText,
       kind: isCalliope ? 'calliope' : 'turtle'
     });
   }
 
-  examples = list;
+  // 6) Fallback, falls nach Filtern/Heuristik trotzdem leer
+  if (!out.length) {
+    out.push({
+      name: isCalliope ? 'Beispiel (Calliope – Fallback)' : 'Beispiel (Turtle – Fallback)',
+      file: '',
+      image: isCalliope ? null : placeholderImg,
+      description: 'Fallback',
+      code: isCalliope ? '# Calliope-Fallback\nprint("Hallo Calliope!")\n'
+                       : '# Turtle-Fallback\nforward(100)\nright(90)\nforward(100)\n',
+      kind: isCalliope ? 'calliope' : 'turtle'
+    });
+  }
+
+  // 7) Bereitstellen für dein bestehendes UI
+  examples = out;
+
+  // (Optional) Debug:
+  console.log('[examples] loaded', { device: dev, count: examples.length, examples });
 }
 
 // ------- Modal-Rendering -------

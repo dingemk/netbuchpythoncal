@@ -73,8 +73,6 @@ async function tryAutoReconnect() {
     }
     await sleep(600); // kurze Pause vor dem nächsten Versuch
   }
-
-  uiLog("⌛️ Automatisches Reconnect nicht gelungen. Bitte „Verbinden“ klicken.");
   S.reconnectInProgress = false;
 }
 
