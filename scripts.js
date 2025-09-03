@@ -1,18 +1,47 @@
 // Python-IDE Scripts (Monaco, Pyodide, Turtle, UI)
 (function () {
-  // ========== Monaco ==========
-  require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" } });
+    // ========== Monaco ==========
+  // Monaco Editor initialisieren
+  function initMonacoEditor() {
+    // Prüfen ob Monaco bereits geladen ist
+    if (typeof require === 'undefined') {
+      console.log("Monaco noch nicht geladen, warte...");
+      setTimeout(initMonacoEditor, 100);
+      return;
+    }
+    
+    // Prüfen ob Editor bereits initialisiert ist
+    if (window.editor) {
+      console.log("Monaco Editor bereits initialisiert");
+      return;
+    }
+    
+    try {
+      require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" } });
 
-require(["vs/editor/editor.main"], function () {
-  const startCode = sessionStorage.getItem('pythonide-editor-content') || "";
-  window.editor = monaco.editor.create(document.getElementById("editor"), {
-    value: startCode,
-    language: "python",
-    theme: "vs",
-    automaticLayout: true,
-    fontSize: 14
-  });
-});
+      require(["vs/editor/editor.main"], function () {
+        const startCode = sessionStorage.getItem('pythonide-editor-content') || "";
+        window.editor = monaco.editor.create(document.getElementById("editor"), {
+          value: startCode,
+          language: "python",
+          theme: "vs",
+          automaticLayout: true,
+          fontSize: 14
+        });
+        console.log("Monaco Editor erfolgreich initialisiert");
+      });
+    } catch (e) {
+      console.error("Monaco initialization failed:", e);
+      setTimeout(initMonacoEditor, 1000);
+    }
+  }
+  
+  // Monaco nach DOM-Load initialisieren
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMonacoEditor);
+  } else {
+    initMonacoEditor();
+  }
 
   // ========== Pyodide + IO ==========
   let pyodide;
@@ -858,25 +887,72 @@ function showExamples() {
     }
 
     loadExampleBtn.addEventListener("click", async function() {
-        if (selectedExample === null) return;
+        console.log("Load Example Button clicked", { selectedExample, examplesLength: examples.length });
+        
+        if (selectedExample === null) {
+            console.error("Kein Beispiel ausgewählt");
+            outEl.innerHTML += `<br>❌ Kein Beispiel ausgewählt<br>`;
+            return;
+        }
+
+        if (!examples || examples.length === 0) {
+            console.error("Keine Beispiele geladen");
+            outEl.innerHTML += `<br>❌ Keine Beispiele geladen<br>`;
+            return;
+        }
 
         try {
             const example = examples[selectedExample];
+            console.log("Loading example:", example);
+            
+            if (!example) {
+                console.error("Beispiel nicht gefunden:", selectedExample);
+                outEl.innerHTML += `<br>❌ Beispiel nicht gefunden<br>`;
+                return;
+            }
+
             // Verwende den bereits geladenen Code (kein fetch mehr nötig)
             const code = example.code || "";
-            if (window.editor && code) {
+            console.log("Code length:", code.length);
+            
+            if (window.editor && typeof window.editor.setValue === 'function' && code) {
                 window.editor.setValue(code);
                 outEl.innerHTML += `<br>📁 Beispiel "${example.name}" geladen<br>`;
+            } else if (code) {
+                // Fallback: Code in Textarea setzen falls Monaco nicht verfügbar
+                const editorElement = document.getElementById("editor");
+                if (editorElement) {
+                    editorElement.value = code;
+                    outEl.innerHTML += `<br>📁 Beispiel "${example.name}" geladen (Fallback)<br>`;
+                } else {
+                    console.error("Editor Element nicht gefunden");
+                    outEl.innerHTML += `<br>❌ Editor nicht verfügbar<br>`;
+                }
             } else {
+                console.error("Editor oder Code nicht verfügbar", { editor: !!window.editor, codeLength: code.length });
                 outEl.innerHTML += `<br>❌ Kein Code für "${example.name}" verfügbar<br>`;
             }
-            examplesModalElement.style.display = 'none';
-            examplesModalElement.classList.remove('show');
-            document.body.classList.remove('modal-open');
-            const backdrop = document.getElementById('examples-backdrop');
-            if (backdrop) backdrop.remove();
+            
+            // Modal schließen
+            try {
+                examplesModalElement.style.display = 'none';
+                examplesModalElement.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                const backdrop = document.getElementById('examples-backdrop');
+                if (backdrop) backdrop.remove();
+            } catch (modalError) {
+                console.error("Fehler beim Schließen des Modals:", modalError);
+            }
         } catch (error) {
             console.error("Fehler beim Laden des Beispiels:", error);
+            console.error("Error stack:", error.stack);
+            console.error("Error details:", {
+                name: error.name,
+                message: error.message,
+                selectedExample,
+                examplesLength: examples.length,
+                editor: !!window.editor
+            });
             outEl.innerHTML += `<br>❌ Fehler beim Laden des Beispiels: ${error.message}<br>`;
         }
     });
