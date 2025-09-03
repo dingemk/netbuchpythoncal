@@ -10,10 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="styles.css" rel="stylesheet" />
 
-  <!-- Monaco + Pyodide + Turtle -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js"></script>
-  <script src="turtle.js"></script>
+  
 </head>
 
 <body>
@@ -41,8 +38,7 @@
           kopieren</button>
         <!-- Clear-Dropdown -->
         <div class="dropdown" id="clear-dropdown">
-          <button class="btn btn-outline-secondary btn-sm" type="button" id="clear-dropdown-btn"
-            aria-expanded="false">Löschen ▼</button>
+          <button class="btn btn-outline-secondary btn-sm" type="button" id="clear-dropdown-btn" aria-expanded="false">Löschen ▼</button>
           <div class="dropdown-menu" id="clear-dropdown-menu" role="menu">
             <a class="dropdown-item" href="#" id="clear-editor-btn" role="menuitem">Editor löschen</a>
             <a class="dropdown-item" href="#" id="clear-canvas-btn" role="menuitem">Leinwand löschen</a>
@@ -52,12 +48,17 @@
 
         <!-- Hamburger-Menü -->
         <div class="dropdown" id="hamburger-dropdown">
-          <button class="btn btn-outline-secondary btn-sm" type="button" id="hamburger-btn"
-            aria-expanded="false">☰</button>
-          <div class="dropdown-menu dropdown-menu-end" id="hamburger-menu" style="min-width:240px;" role="menu">
+          <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="hamburger-btn"
+            data-bs-toggle="dropdown"  aria-expanded="false">☰</button>
+
+          <div class="dropdown-menu dropdown-menu-end" id="hamburger-menu" role="menu" style="min-width:240px;"
+            aria-labelledby="hamburger-btn" >
             <a class="dropdown-item" href="#" id="load-program-btn" role="menuitem">Programm laden</a>
             <a class="dropdown-item" href="#" id="save-program-btn" role="menuitem">Programm speichern</a>
-            <a class="dropdown-item" href="#" id="examples-btn" role="menuitem">📚 Beispiele</a>
+
+            <!-- Modal-Trigger bleibt so: -->
+            <a class="dropdown-item" href="#" id="examples-btn" role="menuitem" data-bs-toggle="modal"
+              data-bs-target="#examplesModal">📚 Beispiele</a>
 
             <div class="dropdown-divider"></div>
             <div class="dropdown-header">Dateien</div>
@@ -85,6 +86,7 @@
                 <option value="c3">Calliope mini 3</option>
               </select>
             </div>
+
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="#" id="licenses-btn" role="menuitem">📄 Lizenzen</a>
             <a class="dropdown-item" href="#" id="impressum-btn" role="menuitem">🏢 Impressum</a>
@@ -125,143 +127,189 @@
     </div>
   </div>
   <!-- Modal für Beispiele -->
-    <div class="modal fade" id="examplesModal" tabindex="-1" aria-labelledby="examplesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="examplesModalLabel">📚 Turtle-Beispiele</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row" id="examples-grid">
-                        <!-- Beispiele werden hier dynamisch eingefügt -->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                    <button type="button" class="btn btn-primary" id="load-example-btn" disabled>Programm laden</button>
-                </div>
-            </div>
+  <div class="modal fade" id="examplesModal" tabindex="-1" aria-labelledby="examplesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="examplesModalLabel">📚 Turtle-Beispiele</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <div class="modal-body">
+          <div class="row" id="examples-grid">
+            <!-- Beispiele werden hier dynamisch eingefügt -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+          <button type="button" class="btn btn-primary" id="load-example-btn" disabled>Programm laden</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Modal für Lizenzen -->
-    <div class="modal fade" id="licensesModal" tabindex="-1" aria-labelledby="licensesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="licensesModalLabel">📄 Lizenzen</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="license-section mb-4">
-                        <h6>🎯 net-schulbuch-python IDE</h6>
-                        <p><strong>Lizenz:</strong> Für nichtkommerzielle Zwecke kostenlos nutzbar</p>
-                        <p><strong>Entwickler:</strong> Klaus Dingemann</p>
-                        <p><strong>Beschreibung:</strong> Eine browserbasierte Python-IDE mit Turtle-Grafik, entwickelt für den Schulunterricht.</p>
-                    </div>
-                    
-                    <div class="license-section mb-4">
-                        <h6>🐍 Python</h6>
-                        <p><strong>Lizenz:</strong> Python Software Foundation License (PSF)</p>
-                        <p><strong>Website:</strong> <a href="https://www.python.org/" target="_blank">https://www.python.org/</a></p>
-                        <p><strong>Beschreibung:</strong> Python ist eine Programmiersprache, die in dieser IDE über Pyodide ausgeführt wird.</p>
-                    </div>
-                    
-                    <div class="license-section mb-4">
-                        <h6>⚡ Pyodide</h6>
-                        <p><strong>Lizenz:</strong> Mozilla Public License 2.0 (MPL 2.0)</p>
-                        <p><strong>Website:</strong> <a href="https://pyodide.org/" target="_blank">https://pyodide.org/</a></p>
-                        <p><strong>Beschreibung:</strong> Pyodide ist eine Python-Distribution für den Browser, die CPython zu WebAssembly kompiliert.</p>
-                    </div>
-                    
-                    <div class="license-section mb-4">
-                        <h6>📝 Monaco Editor</h6>
-                        <p><strong>Lizenz:</strong> MIT License</p>
-                        <p><strong>Website:</strong> <a href="https://microsoft.github.io/monaco-editor/" target="_blank">https://microsoft.github.io/monaco-editor/</a></p>
-                        <p><strong>Beschreibung:</strong> Monaco Editor ist der Code-Editor, der in Visual Studio Code verwendet wird.</p>
-                    </div>
-                    
-                    <div class="license-section mb-4">
-                        <h6>🎨 Bootstrap</h6>
-                        <p><strong>Lizenz:</strong> MIT License</p>
-                        <p><strong>Website:</strong> <a href="https://getbootstrap.com/" target="_blank">https://getbootstrap.com/</a></p>
-                        <p><strong>Beschreibung:</strong> Bootstrap ist ein CSS-Framework für responsive Webdesign.</p>
-                    </div>
-                    
-                    <div class="license-section mb-4">
-                        <h6>📊 Python-Bibliotheken</h6>
-                        <p><strong>pandas:</strong> BSD 3-Clause License</p>
-                        <p><strong>numpy:</strong> BSD 3-Clause License</p>
-                        <p><strong>matplotlib:</strong> Python Software Foundation License (PSF)</p>
-                        <p><strong>micropip:</strong> Mozilla Public License 2.0 (MPL 2.0)</p>
-                        <p><strong>Beschreibung:</strong> Diese Bibliotheken werden über Pyodide geladen und sind für die Datenverarbeitung und Visualisierung verfügbar.</p>
-                    </div>
-                    
-                    <div class="license-section mb-4">
-                        <h6>🔒 Nutzungsbedingungen</h6>
-                        <p><strong>Nichtkommerzielle Nutzung:</strong> Diese Software darf für Bildungszwecke, private Projekte und nichtkommerzielle Anwendungen kostenlos genutzt werden.</p>
-                        <p><strong>Kommerzielle Nutzung:</strong> Für kommerzielle Zwecke ist eine separate Lizenzvereinbarung erforderlich.</p>
-                        <p><strong>Haftungsausschluss:</strong> Die Software wird "wie besehen" bereitgestellt, ohne Gewährleistung jeglicher Art.</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                </div>
-            </div>
+  <!-- Modal für Lizenzen -->
+  <div class="modal fade" id="licensesModal" tabindex="-1" aria-labelledby="licensesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="licensesModalLabel">📄 Lizenzen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-    </div>
+        <div class="modal-body">
+          <div class="license-section mb-4">
+            <h6>🎯 net-schulbuch-python IDE</h6>
+            <p><strong>Lizenz:</strong> Für nichtkommerzielle Zwecke kostenlos nutzbar</p>
+            <p><strong>Entwickler:</strong> Klaus Dingemann</p>
+            <p><strong>Beschreibung:</strong> Eine browserbasierte Python-IDE mit Turtle-Grafik, entwickelt für den
+              Schulunterricht.</p>
+          </div>
 
-    <!-- Modal für Impressum -->
-    <div class="modal fade" id="impressumModal" tabindex="-1" aria-labelledby="impressumModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="impressumModalLabel">🏢 Impressum</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="impressum-section mb-4">
-                        <h6>🏢 Unternehmensangaben</h6>
-                        <p><strong>Firmenname:</strong> net-schulbuch.de gemeinnützige UG (haftungsbeschränkt)</p>
-                        <p><strong>Adresse:</strong> Poststraße 38<br>49477 Ibbenbüren</p>
-                        <p><strong>Telefon:</strong> <a href="tel:+491712672373">+49 171 267 23 73</a></p>
-                        <p><strong>E-Mail:</strong> <a href="mailto:info@net-schulbuch.de">info@net-schulbuch.de</a></p>
-                        <p><strong>Internet:</strong> <a href="https://www.net-schulbuch.de" target="_blank">www.net-schulbuch.de</a></p>
-                    </div>
-                    
-                    <div class="impressum-section mb-4">
-                        <h6>📋 Rechtsform</h6>
-                        <p>NET-Schulbuch.de ist eine gemeinnützige Unternehmergesellschaft - gUG (haftungsbeschränkt) nach dem GmbHG vom 1. November 2008</p>
-                        <p><strong>Geschäftsführer der Gesellschaft ist Berthold Hufnagel</strong><br>
-                        E-Mail: <a href="mailto:hufnagel@net-schulbuch.de">hufnagel@net-schulbuch.de</a></p>
-                    </div>
-                    
-                    <div class="impressum-section mb-4">
-                        <h6>🐛 Fehlermeldungen</h6>
-                        <p>Fehlermeldungen bitte an: <a href="mailto:klaus@dingemann.de">klaus@dingemann.de</a></p>
-                    </div>
-                    
-                    <div class="impressum-section mb-4">
-                        <h6>📚 Unsere digitalen Schulbücher</h6>
-                        <p>Wir empfehlen unsere digitalen Schulbücher für den Mathematik- und Informatikunterricht:</p>
-                        <ul>
-                            <li><strong>Informatik 5/6</strong> (als Schulbuch in NRW genehmigt) - <a href="https://if56.net-schulbuch.de" target="_blank">https://if56.net-schulbuch.de</a></li>
-                            <li><strong>Informatik S I</strong> - <a href="https://if2.net-schulbuch.de" target="_blank">https://if2.net-schulbuch.de</a></li>
-                            <li><strong>Mathematik S I</strong> - <a href="https://m2.net-schulbuch.de" target="_blank">https://m2.net-schulbuch.de</a></li>
-                            <li><strong>Informatik S I Wahlpflichtbereich</strong> - <a href="https://ifwp.net-schulbuch.de" target="_blank">https://ifwp.net-schulbuch.de</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                </div>
-            </div>
+          <div class="license-section mb-4">
+            <h6>🐍 Python</h6>
+            <p><strong>Lizenz:</strong> Python Software Foundation License (PSF)</p>
+            <p><strong>Website:</strong> <a href="https://www.python.org/" target="_blank">https://www.python.org/</a>
+            </p>
+            <p><strong>Beschreibung:</strong> Python ist eine Programmiersprache, die in dieser IDE über Pyodide
+              ausgeführt wird.</p>
+          </div>
+
+          <div class="license-section mb-4">
+            <h6>⚡ Pyodide</h6>
+            <p><strong>Lizenz:</strong> Mozilla Public License 2.0 (MPL 2.0)</p>
+            <p><strong>Website:</strong> <a href="https://pyodide.org/" target="_blank">https://pyodide.org/</a></p>
+            <p><strong>Beschreibung:</strong> Pyodide ist eine Python-Distribution für den Browser, die CPython zu
+              WebAssembly kompiliert.</p>
+          </div>
+
+          <div class="license-section mb-4">
+            <h6>📝 Monaco Editor</h6>
+            <p><strong>Lizenz:</strong> MIT License</p>
+            <p><strong>Website:</strong> <a href="https://microsoft.github.io/monaco-editor/"
+                target="_blank">https://microsoft.github.io/monaco-editor/</a></p>
+            <p><strong>Beschreibung:</strong> Monaco Editor ist der Code-Editor, der in Visual Studio Code verwendet
+              wird.</p>
+          </div>
+
+          <div class="license-section mb-4">
+            <h6>🎨 Bootstrap</h6>
+            <p><strong>Lizenz:</strong> MIT License</p>
+            <p><strong>Website:</strong> <a href="https://getbootstrap.com/"
+                target="_blank">https://getbootstrap.com/</a></p>
+            <p><strong>Beschreibung:</strong> Bootstrap ist ein CSS-Framework für responsive Webdesign.</p>
+          </div>
+
+          <div class="license-section mb-4">
+            <h6>📊 Python-Bibliotheken</h6>
+            <p><strong>pandas:</strong> BSD 3-Clause License</p>
+            <p><strong>numpy:</strong> BSD 3-Clause License</p>
+            <p><strong>matplotlib:</strong> Python Software Foundation License (PSF)</p>
+            <p><strong>micropip:</strong> Mozilla Public License 2.0 (MPL 2.0)</p>
+            <p><strong>Beschreibung:</strong> Diese Bibliotheken werden über Pyodide geladen und sind für die
+              Datenverarbeitung und Visualisierung verfügbar.</p>
+          </div>
+
+          <div class="license-section mb-4">
+            <h6>🔒 Nutzungsbedingungen</h6>
+            <p><strong>Nichtkommerzielle Nutzung:</strong> Diese Software darf für Bildungszwecke, private Projekte und
+              nichtkommerzielle Anwendungen kostenlos genutzt werden.</p>
+            <p><strong>Kommerzielle Nutzung:</strong> Für kommerzielle Zwecke ist eine separate Lizenzvereinbarung
+              erforderlich.</p>
+            <p><strong>Haftungsausschluss:</strong> Die Software wird "wie besehen" bereitgestellt, ohne Gewährleistung
+              jeglicher Art.</p>
+          </div>
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Modal für Impressum -->
+  <div class="modal fade" id="impressumModal" tabindex="-1" aria-labelledby="impressumModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="impressumModalLabel">🏢 Impressum</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="impressum-section mb-4">
+            <h6>🏢 Unternehmensangaben</h6>
+            <p><strong>Firmenname:</strong> net-schulbuch.de gemeinnützige UG (haftungsbeschränkt)</p>
+            <p><strong>Adresse:</strong> Poststraße 38<br>49477 Ibbenbüren</p>
+            <p><strong>Telefon:</strong> <a href="tel:+491712672373">+49 171 267 23 73</a></p>
+            <p><strong>E-Mail:</strong> <a href="mailto:info@net-schulbuch.de">info@net-schulbuch.de</a></p>
+            <p><strong>Internet:</strong> <a href="https://www.net-schulbuch.de"
+                target="_blank">www.net-schulbuch.de</a></p>
+          </div>
+
+          <div class="impressum-section mb-4">
+            <h6>📋 Rechtsform</h6>
+            <p>NET-Schulbuch.de ist eine gemeinnützige Unternehmergesellschaft - gUG (haftungsbeschränkt) nach dem GmbHG
+              vom 1. November 2008</p>
+            <p><strong>Geschäftsführer der Gesellschaft ist Berthold Hufnagel</strong><br>
+              E-Mail: <a href="mailto:hufnagel@net-schulbuch.de">hufnagel@net-schulbuch.de</a></p>
+          </div>
+
+          <div class="impressum-section mb-4">
+            <h6>🐛 Fehlermeldungen</h6>
+            <p>Fehlermeldungen bitte an: <a href="mailto:klaus@dingemann.de">klaus@dingemann.de</a></p>
+          </div>
+
+          <div class="impressum-section mb-4">
+            <h6>📚 Unsere digitalen Schulbücher</h6>
+            <p>Wir empfehlen unsere digitalen Schulbücher für den Mathematik- und Informatikunterricht:</p>
+            <ul>
+              <li><strong>Informatik 5/6</strong> (als Schulbuch in NRW genehmigt) - <a
+                  href="https://if56.net-schulbuch.de" target="_blank">https://if56.net-schulbuch.de</a></li>
+              <li><strong>Informatik S I</strong> - <a href="https://if2.net-schulbuch.de"
+                  target="_blank">https://if2.net-schulbuch.de</a></li>
+              <li><strong>Mathematik S I</strong> - <a href="https://m2.net-schulbuch.de"
+                  target="_blank">https://m2.net-schulbuch.de</a></li>
+              <li><strong>Informatik S I Wahlpflichtbereich</strong> - <a href="https://ifwp.net-schulbuch.de"
+                  target="_blank">https://ifwp.net-schulbuch.de</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>-->
+<script>
+  (function loadBootstrapBundle() {
+    function add(src, label) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = false;            // Reihenfolge garantieren
+      s.onload  = function(){ console.log('[boot] OK:', label, 'typeof bootstrap =', typeof window.bootstrap); };
+      s.onerror = function(){ console.warn('[boot] FAIL:', label); };
+      document.head.appendChild(s);
+      return s;
+    }
+    // 1) lokal (falls du sie ablegst unter vendor/bootstrap.bundle.min.js), sonst überspringen
+    // var local = add('vendor/bootstrap.bundle.min.js', 'local');
+    // local.onerror = function () {
 
+    // 2) CDN-Kette
+    var a = add('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'jsDelivr');
+    a.onerror = function () {
+      var b = add('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js', 'cdnjs');
+      b.onerror = function () {
+        add('https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'unpkg');
+      };
+    };
+    // }; // <- falls du die lokale Zeile oben aktivierst, diese Klammern/Kommentar beachten
+  })();
+</script>
+!-- Monaco + Pyodide + Turtle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js"></script>
+  <script src="turtle.js"></script>
   <!-- micro:bit Tools – erst lokal, dann Fallback CDN (nur UMD der FS-Lib) -->
   <script src="vendor/microbit-fs/dist/microbit-fs.umd.js"></script>
   <script>
@@ -429,124 +477,124 @@
     })();
   </script>
 
-<script>
-  (function deviceSelector() {
-    const sel      = document.getElementById('device-select');
-    const runIcon  = document.getElementById('run-icon');
-    const resetBtn = document.getElementById('emergency-reset-btn');
-    const connectB = document.getElementById('connect-toggle-btn');
-    const flashB   = document.getElementById('flash-btn');
-    const badge    = document.getElementById('calliope-target');
+  <script>
+    (function deviceSelector() {
+      const sel = document.getElementById('device-select');
+      const runIcon = document.getElementById('run-icon');
+      const resetBtn = document.getElementById('emergency-reset-btn');
+      const connectB = document.getElementById('connect-toggle-btn');
+      const flashB = document.getElementById('flash-btn');
+      const badge = document.getElementById('calliope-target');
 
-    if (!sel || !runIcon || !resetBtn || !connectB || !flashB) return;
+      if (!sel || !runIcon || !resetBtn || !connectB || !flashB) return;
 
-    // --- Storage Helpers ---
-    const LS_KEY_DEVICE = 'ui.device';
-    const LS_KEY_CONN   = 'ui.deviceConnected'; // rein informativ – WebSerial-Permissions werden NICHT gespeichert
+      // --- Storage Helpers ---
+      const LS_KEY_DEVICE = 'ui.device';
+      const LS_KEY_CONN = 'ui.deviceConnected'; // rein informativ – WebSerial-Permissions werden NICHT gespeichert
 
-    const saveDevice   = (v)=>{ try{ localStorage.setItem(LS_KEY_DEVICE, v); }catch{} };
-    const loadDevice   = ()=>{ try{ return localStorage.getItem(LS_KEY_DEVICE) || null; }catch{ return null; } };
-    const saveConnFlag = (on)=>{ try{ localStorage.setItem(LS_KEY_CONN, on ? '1' : '0'); }catch{} };
+      const saveDevice = (v) => { try { localStorage.setItem(LS_KEY_DEVICE, v); } catch { } };
+      const loadDevice = () => { try { return localStorage.getItem(LS_KEY_DEVICE) || null; } catch { return null; } };
+      const saveConnFlag = (on) => { try { localStorage.setItem(LS_KEY_CONN, on ? '1' : '0'); } catch { } };
 
-    // --- UI anwenden ---
-    function applyUIByDevice(dev) {
-      const hwSelected = (dev === 'c12' || dev === 'c3' || dev === 'microbit');
+      // --- UI anwenden ---
+      function applyUIByDevice(dev) {
+        const hwSelected = (dev === 'c12' || dev === 'c3' || dev === 'microbit');
 
-      // Verbinden/Flash sichtbar nur bei Hardware
-      connectB.classList.toggle('hidden', !hwSelected);
-      flashB.classList.toggle('hidden', !hwSelected);
+        // Verbinden/Flash sichtbar nur bei Hardware
+        connectB.classList.toggle('hidden', !hwSelected);
+        flashB.classList.toggle('hidden', !hwSelected);
 
-      // Run/Reset sperren, wenn Hardware benutzt wird
-      runIcon.classList.toggle('disabled', hwSelected);
-      if (hwSelected) {
-        runIcon.setAttribute('aria-disabled', 'true');
-        runIcon.title = 'Run im Browser deaktiviert (Hardware aktiv)';
-        resetBtn.setAttribute('disabled', 'disabled');
-        resetBtn.title = 'Reset im Browser deaktiviert (Hardware aktiv)';
-      } else {
-        runIcon.removeAttribute('aria-disabled');
-        runIcon.title = 'Programm ausführen (Shift+Enter)';
-        resetBtn.removeAttribute('disabled');
-        resetBtn.title = 'Notfall-Reset';
-      }
-
-      // Badge aktualisieren (Calliope)
-      if (badge) {
-        if (dev === 'c12') badge.textContent = '1/2';
-        else if (dev === 'c3') badge.textContent = '3';
-        else badge.textContent = '–';
-      }
-
-      // Target an den Builder melden
-      if (window.CalliopeHex) {
-        if (dev === 'c12' && CalliopeHex.setTargetC12) CalliopeHex.setTargetC12();
-        if (dev === 'c3'  && CalliopeHex.setTargetC3)  CalliopeHex.setTargetC3();
-      }
-    }
-
-    // Run-Klick sperren, wenn disabled
-    runIcon.addEventListener('click', (e) => {
-      if (runIcon.classList.contains('disabled')) { e.preventDefault(); e.stopPropagation(); }
-    });
-
-    // --- Auswahlwechsel speichern ---
-    sel.addEventListener('change', () => {
-      const dev = sel.value; // 'none' | 'c12' | 'c3' | 'microbit'
-      saveDevice(dev);
-      applyUIByDevice(dev);
-    });
-
-    // --- Beim Laden gespeichertes Gerät wiederherstellen ---
-    (function restoreDeviceOnLoad(){
-      const saved = loadDevice();
-      if (saved && [...sel.options].some(o => o.value === saved)) {
-        sel.value = saved;
-      }
-      // Falls nichts gespeichert war, aktuellen "selected" Wert verwenden und speichern
-      saveDevice(sel.value);
-      applyUIByDevice(sel.value);
-    })();
-
-    // --- (Optional) Verbunden-Status mitschreiben ---
-    // Achtung: Das speichert nur eine Flag – Berechtigungen sind Sache des Browsers.
-    let connected = false;
-    function setConnected(on){
-      connected = !!on;
-      saveConnFlag(connected);
-      // Knopf-Optik
-      if (connected) {
-        connectB.classList.remove('btn-outline-secondary');
-        connectB.classList.add('btn-success');
-        connectB.textContent = '🟢 Trennen';
-        connectB.title = 'Verbindung trennen';
-      } else {
-        connectB.classList.remove('btn-success');
-        connectB.classList.add('btn-outline-secondary');
-        connectB.textContent = '🔌 Verbinden';
-        connectB.title = 'Mit Calliope verbinden';
-      }
-    }
-
-    // Falls dein CalliopeSerial das bereits steuert, kannst du die folgenden Listener weglassen.
-    document.getElementById('connect-toggle-btn')?.addEventListener('click', async () => {
-      if (!window.CalliopeSerial) return;
-      try{
-        if (!connected) { await CalliopeSerial.openSerial(); setConnected(true); }
-        else { await CalliopeSerial.closeSerial(); setConnected(false); }
-      }catch(e){ /* Ausgabe macht schon der andere Code */ }
-    });
-    navigator.serial?.addEventListener?.('disconnect', ()=> setConnected(false));
-    navigator.serial?.addEventListener?.('connect', async ()=>{
-      // Wenn du tryOpenGranted nutzt, kannst du hier auto-reconnecten
-      try{
-        if (window.CalliopeSerial?.tryOpenGranted) {
-          const ok = await CalliopeSerial.tryOpenGranted();
-          if (ok) setConnected(true);
+        // Run/Reset sperren, wenn Hardware benutzt wird
+        runIcon.classList.toggle('disabled', hwSelected);
+        if (hwSelected) {
+          runIcon.setAttribute('aria-disabled', 'true');
+          runIcon.title = 'Run im Browser deaktiviert (Hardware aktiv)';
+          resetBtn.setAttribute('disabled', 'disabled');
+          resetBtn.title = 'Reset im Browser deaktiviert (Hardware aktiv)';
+        } else {
+          runIcon.removeAttribute('aria-disabled');
+          runIcon.title = 'Programm ausführen (Shift+Enter)';
+          resetBtn.removeAttribute('disabled');
+          resetBtn.title = 'Notfall-Reset';
         }
-      }catch{}
-    });
-  })();
-</script>
+
+        // Badge aktualisieren (Calliope)
+        if (badge) {
+          if (dev === 'c12') badge.textContent = '1/2';
+          else if (dev === 'c3') badge.textContent = '3';
+          else badge.textContent = '–';
+        }
+
+        // Target an den Builder melden
+        if (window.CalliopeHex) {
+          if (dev === 'c12' && CalliopeHex.setTargetC12) CalliopeHex.setTargetC12();
+          if (dev === 'c3' && CalliopeHex.setTargetC3) CalliopeHex.setTargetC3();
+        }
+      }
+
+      // Run-Klick sperren, wenn disabled
+      runIcon.addEventListener('click', (e) => {
+        if (runIcon.classList.contains('disabled')) { e.preventDefault(); e.stopPropagation(); }
+      });
+
+      // --- Auswahlwechsel speichern ---
+      sel.addEventListener('change', () => {
+        const dev = sel.value; // 'none' | 'c12' | 'c3' | 'microbit'
+        saveDevice(dev);
+        applyUIByDevice(dev);
+      });
+
+      // --- Beim Laden gespeichertes Gerät wiederherstellen ---
+      (function restoreDeviceOnLoad() {
+        const saved = loadDevice();
+        if (saved && [...sel.options].some(o => o.value === saved)) {
+          sel.value = saved;
+        }
+        // Falls nichts gespeichert war, aktuellen "selected" Wert verwenden und speichern
+        saveDevice(sel.value);
+        applyUIByDevice(sel.value);
+      })();
+
+      // --- (Optional) Verbunden-Status mitschreiben ---
+      // Achtung: Das speichert nur eine Flag – Berechtigungen sind Sache des Browsers.
+      let connected = false;
+      function setConnected(on) {
+        connected = !!on;
+        saveConnFlag(connected);
+        // Knopf-Optik
+        if (connected) {
+          connectB.classList.remove('btn-outline-secondary');
+          connectB.classList.add('btn-success');
+          connectB.textContent = '🟢 Trennen';
+          connectB.title = 'Verbindung trennen';
+        } else {
+          connectB.classList.remove('btn-success');
+          connectB.classList.add('btn-outline-secondary');
+          connectB.textContent = '🔌 Verbinden';
+          connectB.title = 'Mit Calliope verbinden';
+        }
+      }
+
+      // Falls dein CalliopeSerial das bereits steuert, kannst du die folgenden Listener weglassen.
+      document.getElementById('connect-toggle-btn')?.addEventListener('click', async () => {
+        if (!window.CalliopeSerial) return;
+        try {
+          if (!connected) { await CalliopeSerial.openSerial(); setConnected(true); }
+          else { await CalliopeSerial.closeSerial(); setConnected(false); }
+        } catch (e) { /* Ausgabe macht schon der andere Code */ }
+      });
+      navigator.serial?.addEventListener?.('disconnect', () => setConnected(false));
+      navigator.serial?.addEventListener?.('connect', async () => {
+        // Wenn du tryOpenGranted nutzt, kannst du hier auto-reconnecten
+        try {
+          if (window.CalliopeSerial?.tryOpenGranted) {
+            const ok = await CalliopeSerial.tryOpenGranted();
+            if (ok) setConnected(true);
+          }
+        } catch { }
+      });
+    })();
+  </script>
 
 
   <script>
@@ -697,9 +745,36 @@
       };
     })();
   </script>
+<!-- Bootstrap Bundle (mit Popper) – robuster Loader -->
+<script>
+  (function loadBootstrapBundle() {
+    function add(src, label) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = false;            // Reihenfolge garantieren
+      s.onload  = function(){ console.log('[boot] OK:', label, 'typeof bootstrap =', typeof window.bootstrap); };
+      s.onerror = function(){ console.warn('[boot] FAIL:', label); };
+      document.head.appendChild(s);
+      return s;
+    }
+    // 1) lokal (falls du sie ablegst unter vendor/bootstrap.bundle.min.js), sonst überspringen
+    // var local = add('vendor/bootstrap.bundle.min.js', 'local');
+    // local.onerror = function () {
 
-  <!-- WICHTIG: Kein zusätzliches </script> hier -->
-  <script src="scripts.js" defer></script>
+    // 2) CDN-Kette
+    var a = add('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'jsDelivr');
+    a.onerror = function () {
+      var b = add('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js', 'cdnjs');
+      b.onerror = function () {
+        add('https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'unpkg');
+      };
+    };
+    // }; // <- falls du die lokale Zeile oben aktivierst, diese Klammern/Kommentar beachten
+  })();
+</script>
+
+<!-- danach DEIN Script -->
+<script src="scripts.js" defer></script>
 </body>
 
 </html>

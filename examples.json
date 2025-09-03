@@ -1,0 +1,111 @@
+{
+  "examples": [
+    {
+      "file": "turtlebeispiele/beispiel1.py",
+      "name": "Haus des Nikoluas",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel1.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel2.py",
+      "name": "Sechsecke drehen",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel2.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel3.py",
+      "name": "Farbkreis",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel3.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel4.py",
+      "name": "Gitter",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel4.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel5.py",
+      "name": "Gedrehte Kreise",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel5.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel6.py",
+      "name": "Blume",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel6.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel7.py",
+      "name": "Vielecke",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel7.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel8.py",
+      "name": "Bunte Spiralen",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel8.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel9.py",
+      "name": "Spirale",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel9.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel10.py",
+      "name": "Fraktal Böume",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel10.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel11.py",
+      "name": "Notendiagramm",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel11.png"
+    },
+    {
+      "file": "turtlebeispiele/beispiel12.py",
+      "name": "KI Verstärkendes Lernen",
+      "runtime": "python",
+      "image": "turtlebeispiele/beispiel12.png"
+    },
+    {
+      "file": "calliopebeispiele/beispiel1.py",
+      "name": "Display",
+      "runtime": "micropython"
+    },
+    {
+      "file": "calliopebeispiele/beispiel2.py",
+      "name": "Lichtstärke",
+      "runtime": "micropython"
+    },
+    {
+      "file": "calliopebeispiele/beispiel3.py",
+      "name": "Buttontest",
+      "runtime": "micropython"
+    },
+    {
+      "file": "calliopebeispiele/beispiel4.py",
+      "name": "Musik mit Pins",
+      "runtime": "micropython"
+    },
+    {
+      "file": "calliopebeispiele/beispiel5.py",
+      "name": "Temperaturmessung",
+      "runtime": "micropython"
+    },
+    {
+      "file": "calliopebeispiele/beispiel6.py",
+      "name": "Display show",
+      "runtime": "micropython"
+    },
+    {
+      "file": "calliopebeispiele/beispiel7.py",
+      "name": "Tonfolge",
+      "runtime": "micropython"
+    }
+  ]
+}
