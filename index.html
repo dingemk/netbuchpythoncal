@@ -10,7 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="styles.css" rel="stylesheet" />
 
-  
+
 </head>
 
 <body>
@@ -38,7 +38,8 @@
           kopieren</button>
         <!-- Clear-Dropdown -->
         <div class="dropdown" id="clear-dropdown">
-          <button class="btn btn-outline-secondary btn-sm" type="button" id="clear-dropdown-btn" aria-expanded="false">Löschen ▼</button>
+          <button class="btn btn-outline-secondary btn-sm" type="button" id="clear-dropdown-btn"
+            aria-expanded="false">Löschen ▼</button>
           <div class="dropdown-menu" id="clear-dropdown-menu" role="menu">
             <a class="dropdown-item" href="#" id="clear-editor-btn" role="menuitem">Editor löschen</a>
             <a class="dropdown-item" href="#" id="clear-canvas-btn" role="menuitem">Leinwand löschen</a>
@@ -49,10 +50,10 @@
         <!-- Hamburger-Menü -->
         <div class="dropdown" id="hamburger-dropdown">
           <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="hamburger-btn"
-            data-bs-toggle="dropdown"  aria-expanded="false">☰</button>
+            data-bs-toggle="dropdown" aria-expanded="false">☰</button>
 
           <div class="dropdown-menu dropdown-menu-end" id="hamburger-menu" role="menu" style="min-width:240px;"
-            aria-labelledby="hamburger-btn" >
+            aria-labelledby="hamburger-btn">
             <a class="dropdown-item" href="#" id="load-program-btn" role="menuitem">Programm laden</a>
             <a class="dropdown-item" href="#" id="save-program-btn" role="menuitem">Programm speichern</a>
 
@@ -279,35 +280,51 @@
     </div>
   </div>
   <!-- Bootstrap JS -->
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>-->
-<script>
-  (function loadBootstrapBundle() {
-    function add(src, label) {
-      var s = document.createElement('script');
-      s.src = src;
-      s.async = false;            // Reihenfolge garantieren
-      s.onload  = function(){ console.log('[boot] OK:', label, 'typeof bootstrap =', typeof window.bootstrap); };
-      s.onerror = function(){ console.warn('[boot] FAIL:', label); };
-      document.head.appendChild(s);
-      return s;
-    }
-    // 1) lokal (falls du sie ablegst unter vendor/bootstrap.bundle.min.js), sonst überspringen
-    // var local = add('vendor/bootstrap.bundle.min.js', 'local');
-    // local.onerror = function () {
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>-->
+  <script>
+    (function loadBootstrapBundle() {
+      function add(src, label) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;            // Reihenfolge garantieren
+        s.onload = function () { console.log('[boot] OK:', label, 'typeof bootstrap =', typeof window.bootstrap); };
+        s.onerror = function () { console.warn('[boot] FAIL:', label); };
+        document.head.appendChild(s);
+        return s;
+      }
+      // 1) lokal (falls du sie ablegst unter vendor/bootstrap.bundle.min.js), sonst überspringen
+      // var local = add('vendor/bootstrap.bundle.min.js', 'local');
+      // local.onerror = function () {
 
-    // 2) CDN-Kette
-    var a = add('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'jsDelivr');
-    a.onerror = function () {
-      var b = add('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js', 'cdnjs');
-      b.onerror = function () {
-        add('https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'unpkg');
+      // 2) CDN-Kette
+      var a = add('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'jsDelivr');
+      a.onerror = function () {
+        var b = add('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js', 'cdnjs');
+        b.onerror = function () {
+          add('https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'unpkg');
+        };
       };
-    };
-    // }; // <- falls du die lokale Zeile oben aktivierst, diese Klammern/Kommentar beachten
-  })();
-</script>
-!-- Monaco + Pyodide + Turtle -->
+      // }; // <- falls du die lokale Zeile oben aktivierst, diese Klammern/Kommentar beachten
+    })();
+  </script>
+  <!-- Monaco + Pyodide + Turtle -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+  <script>
+    // Monaco Editor initialisieren
+    require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs" } });
+    require(["vs/editor/editor.main"], function () {
+      const startCode = sessionStorage.getItem('pythonide-editor-content') || "";
+      window.editor = monaco.editor.create(document.getElementById("editor"), {
+        value: startCode,
+        language: "python",
+        theme: "vs",
+        automaticLayout: true,
+        fontSize: 14
+      });
+      console.log("Monaco Editor erfolgreich initialisiert");
+    });
+  </script>
+
   <script src="https://cdn.jsdelivr.net/pyodide/v0.28.2/full/pyodide.js"></script>
   <script src="turtle.js"></script>
   <!-- micro:bit Tools – erst lokal, dann Fallback CDN (nur UMD der FS-Lib) -->
@@ -326,12 +343,29 @@
     })();
   </script>
 
+  <!-- DAPjs für WebUSB Flash -->
+  <script type="module">
+    // DAPjs als ES-Modul laden
+    import * as DAPjs from 'https://cdn.skypack.dev/dapjs@2.2.0';
+    
+    // Globale Variablen setzen
+    window.DAPjs = DAPjs;
+    window.DAPLink = DAPjs.DAPLink;
+    window.WebUSB = DAPjs.WebUSB;
+    window.CortexM = DAPjs.CortexM;
+    
+    console.log('DAPjs erfolgreich geladen:', DAPjs);
+  </script>
+
   <!-- Calliope HEX Tools (ES-Modul, setzt zusätzlich window.calliopeHexTools) -->
   <script type="module" src="calliope-hex-tools.js"></script>
 
+
+
   <!-- Calliope Builder & Serial -->
-  <script src="calliope.hex.js"></script>
+
   <script src="calliope.serial.js"></script>
+  <script src="calliope.hex.js"></script>
 
   <script>
     (function topbarButtons() {
@@ -345,19 +379,9 @@
         outEl?.scrollTo?.(0, outEl.scrollHeight);
       };
 
-      function resolveTarget() {
-        if (window.CalliopeHex?.getTarget) {
-          const t = CalliopeHex.getTarget();
-          if (t) return t; // 'c12' | 'c3'
-        }
-        const rb = document.querySelector('input[name="hwTarget"]:checked');
-        if (rb && (rb.value === 'c12' || rb.value === 'c3')) return rb.value;
-        return 'c12';
-      }
-
       let connected = false;
-      let c12ReconnectSession = null;
       function updateConnectUI() {
+        connected = !!window.CalliopeSerial?.isOpen?.();
         if (connected) {
           connectBtn.classList.remove('btn-outline-secondary');
           connectBtn.classList.add('btn-success');
@@ -371,104 +395,60 @@
         }
       }
 
-      // Verbinden/Trennen
+      // Verbinden/Trennen (einziger Handler!)
       connectBtn.addEventListener('click', async () => {
         if (!window.CalliopeSerial) { log('❌ CalliopeSerial nicht geladen.', 'text-danger'); return; }
+        connectBtn.disabled = true;            // gegen Doppel-Klicks
         try {
-          if (!connected) { await CalliopeSerial.openSerial(); connected = true; }
-          else { await CalliopeSerial.closeSerial(); connected = false; }
-        } catch (e) { log(`❌ ${e?.message || e}`, 'text-danger'); }
-        updateConnectUI();
-      });
-
-      navigator.serial?.addEventListener?.('disconnect', () => { connected = false; updateConnectUI(); });
-
-      // Bonus: wenn das Gerät neu enumeriert, sofort versuchen (ohne Dialog) zu öffnen
-      navigator.serial?.addEventListener?.('connect', async () => {
-        if (!window.CalliopeSerial?.tryOpenGranted) return;
-        try {
-          const ok = await CalliopeSerial.tryOpenGranted();
-          if (ok) { connected = true; updateConnectUI(); }
-        } catch { }
-      });
-
-      // Flash-Button
-      flashBtn.addEventListener('click', async () => {
-        const target = resolveTarget();
-        try {
-          if (target === 'c12') {
-            // 1) HEX bauen & downloaden
-            await CalliopeHex.buildAndDownload();
-
-            // 2) Auto-Reconnect ohne Dialog – Sessionsafe
-            if (!window.CalliopeSerial?.tryOpenGranted) {
-              log('ℹ️ Auto-Reconnect nicht verfügbar (tryOpenGranted fehlt).', 'text-muted');
-              return;
-            }
-
-            // neue Session starten, ältere invalidieren
-            const mySession = Symbol('c12-reconnect');
-            c12ReconnectSession = mySession;
-
-            log('⏳ Warte auf Gerät … automatische Wiederverbindung bis zu 20s …');
-
-            const startDelayMs = 3000;   // erster Versuch nach 3s
-            const windowMs = 20000;  // insgesamt 20s
-            const startTs = Date.now();
-
-            let timerId = null;
-
-            function isStale() {
-              return c12ReconnectSession !== mySession; // ein neuer Versuch hat uns überholt
-            }
-            function cleanup() {
-              if (timerId) { clearTimeout(timerId); timerId = null; }
-              navigator.serial?.removeEventListener?.('connect', onConnectEvent);
-            }
-
-            async function success() {
-              if (isStale()) return;
-              connected = true; updateConnectUI();
-              log('✅ Serielle Verbindung wiederhergestellt.');
-              cleanup();
-            }
-
-            // Wenn das System „connect“ meldet, sofort probieren (ohne Dialog)
-            async function onConnectEvent() {
-              if (isStale()) return;
-              try {
-                const ok = await CalliopeSerial.tryOpenGranted();
-                if (ok) await success();
-              } catch { }
-            }
-            navigator.serial?.addEventListener?.('connect', onConnectEvent);
-
-            const attempt = async () => {
-              if (isStale()) return; // neuer Versuch gestartet → diesen abbrechen
-              if (Date.now() - startTs > windowMs) {
-                cleanup();
-                if (!isStale()) { // nur loggen, wenn wir noch die aktive Session sind
-                  log('⌛️ Kein Auto-Reconnect möglich. Bitte „🔌 Verbinden“ klicken.', 'text-warning');
-                }
-                return;
-              }
-              try {
-                const ok = await CalliopeSerial.tryOpenGranted(); // öffnet nur freigegebene Ports
-                if (ok) { await success(); return; }
-              } catch { }
-              timerId = setTimeout(attempt, 1000); // alle 1s erneut
-            };
-
-            // erster Versuch nach 3s
-            timerId = setTimeout(attempt, startDelayMs);
-
-          } else if (target === 'c3') {
-            window.CalliopeSerial?.expectReset?.(20000);
-            await CalliopeHex.buildAndSaveToDrive();
+          if (!window.CalliopeSerial.isOpen()) {
+            await CalliopeSerial.openSerial();
           } else {
-            log('⚠️ Keine Hardware gewählt.', 'text-warning');
+            await CalliopeSerial.closeSerial();
           }
         } catch (e) {
+          log(`❌ ${e?.message || e}`, 'text-danger');
+        } finally {
+          updateConnectUI();
+          connectBtn.disabled = false;
+        }
+      });
+
+      // System-Events halten den Button-Status synchron
+      navigator.serial?.addEventListener?.('disconnect', () => updateConnectUI());
+      navigator.serial?.addEventListener?.('connect', () => updateConnectUI());
+
+
+      // --- global: Hardware-Ziel bestimmen ---
+      function resolveTarget() {
+        const sel = document.getElementById('device-select');
+        if (sel && (sel.value === 'c12' || sel.value === 'c3')) return sel.value;
+        if (window.CalliopeHex?.getTarget) {
+          const t = CalliopeHex.getTarget();
+          if (t === 'c12' || t === 'c3') return t;
+        }
+        return 'c12'; // Fallback
+      }
+
+
+      // Flash-Button - requestDevice() SOFORT in der User-Geste
+      flashBtn.addEventListener('click', async () => {
+        try {
+          const target = resolveTarget();
+
+          if (target === 'c12') {
+            await CalliopeHex.buildAndDownload();
+            return;
+          }
+          if (target !== 'c3') {
+            log('⚠️ Keine Hardware gewählt.', 'text-warning');
+            return;
+          }
+
+                    // --- 1) Verwende die robuste WebUSB-Funktion aus calliope.hex.js
+          await CalliopeHex.buildAndFlashWebUSB();
+
+        } catch (e) {
+          console.error(e);
           log(`❌ Flash: ${e?.message || e}`, 'text-danger');
         }
       });
@@ -488,29 +468,24 @@
 
       if (!sel || !runIcon || !resetBtn || !connectB || !flashB) return;
 
-      // --- Storage Helpers ---
+      // Storage Helpers
       const LS_KEY_DEVICE = 'ui.device';
-      const LS_KEY_CONN = 'ui.deviceConnected'; // rein informativ – WebSerial-Permissions werden NICHT gespeichert
-
       const saveDevice = (v) => { try { localStorage.setItem(LS_KEY_DEVICE, v); } catch { } };
       const loadDevice = () => { try { return localStorage.getItem(LS_KEY_DEVICE) || null; } catch { return null; } };
-      const saveConnFlag = (on) => { try { localStorage.setItem(LS_KEY_CONN, on ? '1' : '0'); } catch { } };
 
-      // --- UI anwenden ---
       function applyUIByDevice(dev) {
         const hwSelected = (dev === 'c12' || dev === 'c3' || dev === 'microbit');
 
-        // Verbinden/Flash sichtbar nur bei Hardware
         connectB.classList.toggle('hidden', !hwSelected);
         flashB.classList.toggle('hidden', !hwSelected);
 
-        // Run/Reset sperren, wenn Hardware benutzt wird
+        // Run/Reset sperren, wenn Hardware
         runIcon.classList.toggle('disabled', hwSelected);
         if (hwSelected) {
           runIcon.setAttribute('aria-disabled', 'true');
           runIcon.title = 'Run im Browser deaktiviert (Hardware aktiv)';
           resetBtn.setAttribute('disabled', 'disabled');
-          resetBtn.title = 'Reset im Browser deaktiviert (Hardware aktiv)';
+          resetBtn.title = 'Notfall-Reset (Browser) deaktiviert';
         } else {
           runIcon.removeAttribute('aria-disabled');
           runIcon.title = 'Programm ausführen (Shift+Enter)';
@@ -518,84 +493,41 @@
           resetBtn.title = 'Notfall-Reset';
         }
 
-        // Badge aktualisieren (Calliope)
+        // Badge
         if (badge) {
           if (dev === 'c12') badge.textContent = '1/2';
           else if (dev === 'c3') badge.textContent = '3';
           else badge.textContent = '–';
         }
 
-        // Target an den Builder melden
+        // Target an Builder
         if (window.CalliopeHex) {
           if (dev === 'c12' && CalliopeHex.setTargetC12) CalliopeHex.setTargetC12();
           if (dev === 'c3' && CalliopeHex.setTargetC3) CalliopeHex.setTargetC3();
         }
       }
 
-      // Run-Klick sperren, wenn disabled
-      runIcon.addEventListener('click', (e) => {
-        if (runIcon.classList.contains('disabled')) { e.preventDefault(); e.stopPropagation(); }
-      });
-
-      // --- Auswahlwechsel speichern ---
+      // Auswahlwechsel speichern + anwenden
       sel.addEventListener('change', () => {
         const dev = sel.value; // 'none' | 'c12' | 'c3' | 'microbit'
         saveDevice(dev);
         applyUIByDevice(dev);
       });
 
-      // --- Beim Laden gespeichertes Gerät wiederherstellen ---
+      // Beim Laden gespeichertes Gerät wiederherstellen
       (function restoreDeviceOnLoad() {
         const saved = loadDevice();
         if (saved && [...sel.options].some(o => o.value === saved)) {
           sel.value = saved;
         }
-        // Falls nichts gespeichert war, aktuellen "selected" Wert verwenden und speichern
         saveDevice(sel.value);
         applyUIByDevice(sel.value);
       })();
 
-      // --- (Optional) Verbunden-Status mitschreiben ---
-      // Achtung: Das speichert nur eine Flag – Berechtigungen sind Sache des Browsers.
-      let connected = false;
-      function setConnected(on) {
-        connected = !!on;
-        saveConnFlag(connected);
-        // Knopf-Optik
-        if (connected) {
-          connectB.classList.remove('btn-outline-secondary');
-          connectB.classList.add('btn-success');
-          connectB.textContent = '🟢 Trennen';
-          connectB.title = 'Verbindung trennen';
-        } else {
-          connectB.classList.remove('btn-success');
-          connectB.classList.add('btn-outline-secondary');
-          connectB.textContent = '🔌 Verbinden';
-          connectB.title = 'Mit Calliope verbinden';
-        }
-      }
-
-      // Falls dein CalliopeSerial das bereits steuert, kannst du die folgenden Listener weglassen.
-      document.getElementById('connect-toggle-btn')?.addEventListener('click', async () => {
-        if (!window.CalliopeSerial) return;
-        try {
-          if (!connected) { await CalliopeSerial.openSerial(); setConnected(true); }
-          else { await CalliopeSerial.closeSerial(); setConnected(false); }
-        } catch (e) { /* Ausgabe macht schon der andere Code */ }
-      });
-      navigator.serial?.addEventListener?.('disconnect', () => setConnected(false));
-      navigator.serial?.addEventListener?.('connect', async () => {
-        // Wenn du tryOpenGranted nutzt, kannst du hier auto-reconnecten
-        try {
-          if (window.CalliopeSerial?.tryOpenGranted) {
-            const ok = await CalliopeSerial.tryOpenGranted();
-            if (ok) setConnected(true);
-          }
-        } catch { }
-      });
+      // ❌ KEIN zusätzlicher Click-Handler für connectB hier!
+      // ❌ KEIN zweiter connected-State hier!
     })();
   </script>
-
 
   <script>
     // Editor-Inhalt robust abholen (Textarea / Monaco / CodeMirror)
@@ -615,22 +547,8 @@
         outEl: document.getElementById('output')
       });
 
-      // 🔌 Verbinden
-      document.getElementById('btn-serial-connect')?.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try { await CalliopeSerial.openSerial(); }
-        catch (err) {
-          console.error('Connect-Fehler:', err);
-          document.getElementById('output')?.insertAdjacentHTML('beforeend',
-            `<div class="text-danger">❌ Serial Connect: ${err.message || err}</div>`);
-        }
-      });
-
-      // ❌ Trennen
-      document.getElementById('btn-serial-close')?.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try { await CalliopeSerial.closeSerial(); } catch (err) { console.error(err); }
-      });
+      // 🔌 Verbinden (Event-Listener entfernt - wird über connectBtn gehandhabt)
+      // ❌ Trennen (Event-Listener entfernt - wird über connectBtn gehandhabt)
 
       // ⬆️ Upload (main.py) + sichtbar ausführen
       document.getElementById('btn-serial-upload')?.addEventListener('click', async (e) => {
@@ -643,28 +561,51 @@
     })();
 
     // -------- HEX-Builder initialisieren – fester Pfad in /firmware --------
-    (function initHex() {
-      if (!window.CalliopeHex) { setTimeout(initHex, 80); return; }
 
-      fetch('firmware/micro_bit.hex', { method: 'GET', cache: 'no-store' })
-        .then(r => {
-          if (!r.ok) throw new Error('firmware/micro_bit.hex nicht erreichbar');
-          CalliopeHex.init({
-            outEl: document.getElementById('output'),
-            firmwareUrls: {
-              c12: 'firmware/micro_bit.hex'
-              // c3:  'firmware/calliope_v3.hex'   // (optional) ergänzen, falls vorhanden
-            }
-          });
-        })
-        .catch(err => {
+
+    (function initCalliopeHex() {
+      if (!window.CalliopeHex) { setTimeout(initCalliopeHex, 80); return; }
+
+      const urls = {
+        c12: 'firmware/calliope12-micropython.hex', // Calliope Mini 1/2
+        c3: 'firmware/calliope-v3-correct.hex'    // Calliope Mini 3 (richtige Firmware)
+      };
+
+      // Hilfsfunktion: Datei testen
+      async function checkUrl(url) {
+        try {
+          const r = await fetch(url, { method: 'GET', cache: 'no-store' });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return true;
+        } catch (e) {
           document.getElementById('output')?.insertAdjacentHTML(
             'beforeend',
-            `<div class="text-danger">❌ ${err.message}</div>`
+            `<div class="text-danger">❌ Firmware nicht erreichbar: ${url} (${e.message || e})</div>`
           );
-          console.error(err);
+          console.error('Firmware fehlt:', url, e);
+          return false;
+        }
+      }
+
+      (async () => {
+        const ok12 = await checkUrl(urls.c12);
+        const ok3 = await checkUrl(urls.c3);
+
+        if (!ok12 && !ok3) {
+          document.getElementById('output')?.insertAdjacentHTML(
+            'beforeend',
+            `<div class="text-danger">❌ Weder Calliope V1/V2 noch V3 Firmware gefunden – bitte /firmware prüfen!</div>`
+          );
+          return; // gar nicht initialisieren
+        }
+
+        CalliopeHex.init({
+          outEl: document.getElementById('output'),
+          firmwareUrls: urls
         });
+      })();
     })();
+
 
     // -------- Builder-Hook: Editor → HEX + Flash mit expectReset --------
     (function hookHexBuilder() {
@@ -694,6 +635,9 @@
           ? await calliopeHexTools.packMainPyAuto(baseHex, py, { quiet: true })
           : calliopeHexTools.appendScriptV1(baseHex, py);
       }
+      
+      // Exportiere buildHexText für den Flash-Handler
+      CalliopeHex._buildHexText = buildHexText;
 
       // ⬇️ Download (kein Reset nötig)
       CalliopeHex.buildAndDownload = async function () {
@@ -745,36 +689,36 @@
       };
     })();
   </script>
-<!-- Bootstrap Bundle (mit Popper) – robuster Loader -->
-<script>
-  (function loadBootstrapBundle() {
-    function add(src, label) {
-      var s = document.createElement('script');
-      s.src = src;
-      s.async = false;            // Reihenfolge garantieren
-      s.onload  = function(){ console.log('[boot] OK:', label, 'typeof bootstrap =', typeof window.bootstrap); };
-      s.onerror = function(){ console.warn('[boot] FAIL:', label); };
-      document.head.appendChild(s);
-      return s;
-    }
-    // 1) lokal (falls du sie ablegst unter vendor/bootstrap.bundle.min.js), sonst überspringen
-    // var local = add('vendor/bootstrap.bundle.min.js', 'local');
-    // local.onerror = function () {
+  <!-- Bootstrap Bundle (mit Popper) – robuster Loader -->
+  <script>
+    (function loadBootstrapBundle() {
+      function add(src, label) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;            // Reihenfolge garantieren
+        s.onload = function () { console.log('[boot] OK:', label, 'typeof bootstrap =', typeof window.bootstrap); };
+        s.onerror = function () { console.warn('[boot] FAIL:', label); };
+        document.head.appendChild(s);
+        return s;
+      }
+      // 1) lokal (falls du sie ablegst unter vendor/bootstrap.bundle.min.js), sonst überspringen
+      // var local = add('vendor/bootstrap.bundle.min.js', 'local');
+      // local.onerror = function () {
 
-    // 2) CDN-Kette
-    var a = add('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'jsDelivr');
-    a.onerror = function () {
-      var b = add('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js', 'cdnjs');
-      b.onerror = function () {
-        add('https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'unpkg');
+      // 2) CDN-Kette
+      var a = add('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'jsDelivr');
+      a.onerror = function () {
+        var b = add('https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js', 'cdnjs');
+        b.onerror = function () {
+          add('https://unpkg.com/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js', 'unpkg');
+        };
       };
-    };
-    // }; // <- falls du die lokale Zeile oben aktivierst, diese Klammern/Kommentar beachten
-  })();
-</script>
+      // }; // <- falls du die lokale Zeile oben aktivierst, diese Klammern/Kommentar beachten
+    })();
+  </script>
 
-<!-- danach DEIN Script -->
-<script src="scripts.js" defer></script>
+  <!-- danach DEIN Script -->
+  <script src="scripts.js" defer></script>
 </body>
 
 </html>

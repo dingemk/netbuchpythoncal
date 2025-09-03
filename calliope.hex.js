@@ -1,195 +1,310 @@
-(function(){
-  const STATE = {
-    editor: null,
+/* calliope.hex.js
+ * Builder & Flasher für Calliope mini 1/2 und 3
+ * - init({ outEl, firmwareUrls })
+ * - setTargetC12(), setTargetC3(), getTarget()
+ * - buildAndDownload(), buildAndSaveToDrive(), buildAndFlashWebUSB()
+ *
+ * Abhängigkeiten (global):
+ *   - window.calliopeHexTools: { appendScriptV1, packMainPyAuto, hexToU8? }
+ *   - window.CalliopeSerial?: { saveHexToDrive?, expectReset? }
+ *   - DAPjs (für C3-WebUSB): lädt in deiner index.html als ES-Modul und setzt
+ *       window.DAPjs, window.DAPLink, window.WebUSB
+ */
+
+(function () {
+  'use strict';
+
+  // -------------------- interner Zustand --------------------
+  const S = {
     outEl: null,
-    target: 'c12',
-    firmwareUrls: { c12: 'firmware/micro_bit.hex' }
-  };
-  const out = () => STATE.outEl || document.getElementById('output');
-  const log = (...a)=>{ const el=out(); const msg=a.join(' ');
-    if (el){ el.innerHTML += msg.replace(/\r/g,'').replace(/\n/g,'<br>')+'<br>'; el.scrollTop=el.scrollHeight; }
-    else { console.log('[calliope]', msg); }
+    target: 'c12', // 'c12' | 'c3'
+    firmwareUrls: {
+      c12: 'firmware/calliope12-micropython.hex',
+      c3:  'firmware/calliope-v3-correct.hex'
+    },
   };
 
-  async function fetchText(url){
-    const r = await fetch(url, { cache:'no-store' });
-    if(!r.ok) throw new Error(`HTTP ${r.status} für ${url}`);
-    return await r.text();
-  }
-
-  // --- WT-kompatible Normalisierung von main.py (LF, Prelude, finales LF, 16-Byte-Padding) ---
-  function normalizeMainPy(py) {
-    const PRELUDE = "from calliope_mini import uart\nuart.init()\n";
-    let s = String(py).replace(/^\uFEFF/, "");                  // BOM weg
-    if (!/^from\s+calliope_mini\s+import\s+uart\s*\n\s*uart\.init\(\)/.test(s)) {
-      s = PRELUDE + s;                                         // Prelude vorn
-    }
-    s = s.replace(/\r\n/g, "\n").replace(/\r/g, "\n");          // nur LF
-    if (!s.endsWith("\n")) s += "\n";                           // finales LF
-    const n = new TextEncoder().encode(s).length;               // NUL-Padding auf 16-Byte
-    const pad = (16 - (n % 16)) % 16;
-    if (pad) s += "\0".repeat(pad);
-    return s;
-  }
-
-  // --------- manueller Intel-HEX Fallback (ohne microbit-fs) ----------
-  function hexChecksum(bytes) {
-    let sum = 0;
-    for (const b of bytes) sum = (sum + (b & 0xFF)) & 0xFF;
-    return ((0x100 - sum) & 0xFF);
-  }
-  function hexLine(addr, type, data) {
-    const ll = data.length & 0xFF;
-    const hi = (addr >> 8) & 0xFF, lo = addr & 0xFF;
-    const bytes = [ll, hi, lo, type, ...data];
-    const cs = hexChecksum(bytes);
-    const to2 = (x)=>x.toString(16).toUpperCase().padStart(2,"0");
-    const dataStr = data.map(to2).join("");
-    return `:${to2(ll)}${to2(hi)}${to2(lo)}${to2(type)}${dataStr}${to2(cs)}`;
-  }
-  // schneidet ab 0xE000 und baut Script neu auf (Header MP A7 00 + 16-Byte Chunks + EOF)
-  function rebuildWithAppendedScript(rawHex, mainPyUtf8Bytes) {
-    const lines = rawHex.split(/\r?\n/).filter(Boolean);
-    const kept = [];
-    for (const line of lines) {
-      if (!line.startsWith(":")) continue;
-      const type = parseInt(line.slice(7,9),16);
-      const addr = parseInt(line.slice(3,7),16);
-      if (type === 1) continue;                 // EOF weglassen
-      if (type === 0 && addr >= 0xE000) break;  // ab E000 wegschneiden
-      kept.push(line);
-    }
-    const out = [...kept];
-    // Headerwort an 0xE000: 4D 50 A7 00
-    out.push(hexLine(0xE000, 0x00, [0x4D,0x50,0xA7,0x00]));
-    // Python ab 0xE004 in 16-Byte-Blöcken
-    let addr = 0xE004;
-    for (let i=0; i<mainPyUtf8Bytes.length; i+=16) {
-      const chunk = mainPyUtf8Bytes.slice(i, i+16);
-      out.push(hexLine(addr, 0x00, Array.from(chunk)));
-      addr += 16;
-    }
-    // EOF
-    out.push(":00000001FF");
-    return out.join("\n") + "\n";
-  }
-
-  // ------------ microbit-fs dynamisch erkennen (bevorzugt fromHex→toHex) -------------
-  function resolveMicrobitFs() {
-    const mod = window.MicrobitFs;
-    const root = (mod && mod.default) ? mod.default : mod;
-    const hasFn = (o,n)=>o && typeof o[n]==='function';
-
-    // 1) echtes Dateisystem: vorhandenes main.py wird ÜBERSCHRIEBEN
-    if (hasFn(root,'fromHex') && hasFn(root,'pack') /* einige Builds brauchen pack intern */) {
-      return {
-        kind: 'fromHex→toHex',
-        async build({hex, files}) {
-          const fs = await root.fromHex(hex);
-          const content = normalizeMainPy(files['main.py'] || '');
-          if (!fs || typeof fs.write !== 'function' || typeof fs.toHex !== 'function') {
-            throw new Error('FS.write()/FS.toHex() fehlt');
-          }
-          await fs.write('main.py', content);
-          return fs.toHex();
-        }
-      };
-    }
-
-    // 2) Append-API (wenn vorhanden) – erzeugt EINEN Script-Block
-    if (hasFn(root,'addIntelHexAppendedScript')) {
-      return {
-        kind: 'appendedScript',
-        async build({hex, files}) {
-          const content = normalizeMainPy(files['main.py'] ?? '');
-          if (!content) throw new Error('Kein main.py Inhalt übergeben');
-          return root.addIntelHexAppendedScript(hex, 'main.py', content);
-        }
-      };
-    }
-
-    // 3) createHex/pack/build Fallbacks
-    if (hasFn(root,'createHex')) {
-      return {
-        kind: 'createHex',
-        async build({hex, files}) {
-          return root.createHex({ hex, files:{ 'main.py': normalizeMainPy(files['main.py']||'') } });
-        }
-      };
-    }
-    if (hasFn(root,'pack')) {
-      return {
-        kind: 'pack',
-        async build({hex, files}) {
-          return root.pack({ hex, files:{ 'main.py': normalizeMainPy(files['main.py']||'') } });
-        }
-      };
-    }
-    if (hasFn(root,'build')) {
-      return {
-        kind: 'build',
-        async build({hex, files}) {
-          return root.build({ hex, files:{ 'main.py': normalizeMainPy(files['main.py']||'') } });
-        }
-      };
-    }
-
-    // 4) **Kein** microbit-fs → manueller Rebuilder
-    return {
-      kind: 'manual-intel-hex',
-      async build({ hex, files }) {
-        const norm = normalizeMainPy(files['main.py'] || '');
-        const bytes = new TextEncoder().encode(norm);
-        return rebuildWithAppendedScript(hex, bytes);
+  // -------------------- kleine Utils --------------------
+  function log(msg, cls = 'text-muted') {
+    try {
+      if (S.outEl) {
+        S.outEl.insertAdjacentHTML('beforeend', `<div class="${cls}">${msg}</div>`);
+        S.outEl.scrollTo?.(0, S.outEl.scrollHeight);
+      } else {
+        console.log('[CalliopeHex]', msg);
       }
-    };
+    } catch { console.log('[CalliopeHex]', msg); }
   }
 
-  async function buildHexFromCode(pyCode){
-    const firmwareHex = await fetchText(STATE.firmwareUrls[STATE.target]);
-    const api = resolveMicrobitFs();
-    log(`ℹ️ Build-Route: ${api.kind}; Basis: ${STATE.firmwareUrls[STATE.target]}`);
-    return await api.build({ hex: firmwareHex, files: { 'main.py': pyCode } });
+  function getEditorCode() {
+    try { if (window.editor?.getValue) return String(window.editor.getValue()); } catch {}
+    try { if (window.cmEditor?.getValue) return String(window.cmEditor.getValue()); } catch {}
+    const ta = document.querySelector('#editor, textarea[name="code"], textarea[data-role="editor"]');
+    return ta ? String(ta.value || '') : '';
   }
 
-  const API = {
-    init({ editor, outEl, target='c12', firmwareUrls }){
-      STATE.editor = editor || window.editor || null;
-      STATE.outEl  = outEl  || document.getElementById('output') || null;
-      STATE.target = target;
-      if (firmwareUrls) STATE.firmwareUrls = firmwareUrls;
-      log('✅ CalliopeHex bereit (Target:', STATE.target, ')');
-    },
-    setTargetC12(){ STATE.target='c12'; log('🎯 Ziel: Calliope 1/2'); },
-    setTargetC3(){  STATE.target='c3';  log('🎯 Ziel: Calliope 3');  },
+  function ensureTools() {
+    const T = window.calliopeHexTools || window.calliopeHexTools?.default;
+    if (!T) throw new Error('calliope-hex-tools nicht geladen.');
+    const hasV1 = typeof T.appendScriptV1 === 'function';
+    const hasPack = typeof T.packMainPyAuto === 'function';
+    if (!hasV1 || !hasPack) throw new Error('calliope-hex-tools unvollständig (appendScriptV1/packMainPyAuto fehlen).');
+    return T;
+  }
 
-    async buildAndDownload(){
-      try{
-        const code = (STATE.editor?.getValue?.() || window.editor?.getValue?.() || '').toString();
-        if (!code) throw new Error('Kein Code im Editor');
-        const hex = await buildHexFromCode(code);
-        const blob = new Blob([hex], { type:'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download='main.hex';
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-        log('⬇️ main.hex heruntergeladen.');
-      } catch(e){ log('❌ Build/Download fehlgeschlagen:', e.message); }
-    },
+  async function fetchText(url, purpose = 'Ressource') {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${purpose} nicht ladbar (${res.status}) → ${url}`);
+    return res.text();
+  }
 
-    async buildAndSaveToDrive(){
-      try{
-        if (!('showDirectoryPicker' in window)) throw new Error('File System Access API fehlt (Chrome/Edge + HTTPS).');
-        const code = (STATE.editor?.getValue?.() || window.editor?.getValue?.() || '').toString();
-        if (!code) throw new Error('Kein Code im Editor');
-        const hex = await buildHexFromCode(code);
-        const dir = await window.showDirectoryPicker();
-        const fh = await dir.getFileHandle('main.hex', { create:true });
-        const w = await fh.createWritable(); await w.write(hex); await w.close();
-        log('💽 main.hex aufs Laufwerk gespeichert.');
-      } catch(e){ log('❌ Build/Save fehlgeschlagen:', e.message); }
+  async function fetchBaseHex() {
+    const url = S.target === 'c3' ? S.firmwareUrls.c3 : S.firmwareUrls.c12;
+    if (!url) throw new Error('Keine Firmware-URL für aktuelles Ziel.');
+    return await fetchText(url, 'Firmware');
+  }
+
+  // --------- HELPER: C3 per WebUSB verbinden (mit Retries & Clock-Drossel) ----------
+  async function connectDAPLinkC3WithRetries(logFn) {
+    const WebUSB = window.WebUSB || window.DAPjs?.WebUSB;
+    const DAPLink = window.DAPLink || window.DAPjs?.DAPLink;
+    if (!WebUSB || !DAPLink) throw new Error('DAPjs/WebUSB nicht geladen');
+
+    // Serielle Verbindungen schließen, damit WebUSB exklusiv ist
+    try { await window.CalliopeSerial?.closeSerial?.(); } catch {}
+
+    // Kleiner Diagnose-Helper: DETAILS.TXT lesen, wenn vorhanden
+    async function logDetailsTxt() {
+      try {
+        const drives = await navigator.storage?.getDirectory?.(); // nicht überall verfügbar
+      } catch {}
+      try {
+        // Wenn Calliope als Mass-Storage gemountet ist, kann man DETAILS.TXT über die Filesystem-API
+        // idR. nicht direkt lesen. In der Praxis: Nutzerhinweis
+        logFn?.('ℹ️ Tipp: Öffne auf dem Calliope-Laufwerk die Datei <code>DETAILS.TXT</code> und prüfe die DAPLink-Version (empfohlen ≥ 0249).', 'text-muted');
+      } catch {}
     }
+
+    // Drei Verbindungs-Versuche mit sinkender SWD-Clock
+    const clocks = [1_000_000, 500_000, 200_000]; // 1 MHz → 500 kHz → 200 kHz
+    let lastErr = null;
+
+    for (let i = 0; i < clocks.length; i++) {
+      const hz = clocks[i];
+      let daplink = null;
+      try {
+        // 1) Gerät *in der User-Geste* auswählen
+        // Spezifischer Filter für Calliope mini 3 (CMSIS-DAP)
+        const device = await navigator.usb.requestDevice({ 
+          filters: [
+            { vendorId: 0x0D28, productId: 0x0204 }, // Calliope mini 3 CMSIS-DAP
+            { vendorId: 0x0D28 } // Fallback für andere DAPLink-Geräte
+          ] 
+        });
+        
+        // Debug: USB-Gerätedaten loggen
+        console.log('USB Device:',
+          device.productName,
+          'vid=0x' + device.vendorId.toString(16),
+          'pid=0x' + device.productId.toString(16));
+
+        // 2) Transport + DAPLink
+        const transport = new WebUSB(device);
+        daplink = new DAPLink(transport);
+
+        // 3) Verbinden
+        await daplink.connect();
+
+        // 4) Clock setzen (wenn API verfügbar)
+        try {
+          if (typeof daplink.setClock === 'function') {
+            await daplink.setClock(hz);
+          } else if (daplink.dap?.swjClock) {
+            await daplink.dap.swjClock(hz);
+          }
+        } catch (e) {
+          // nicht fatal
+          console.warn('[CalliopeHex] Clock-Drosselung nicht verfügbar:', e);
+        }
+
+        // 5) Sanity-Call: Version abfragen (stabilisiert manche Firmwares)
+        try { 
+          if (typeof daplink.getVersion === 'function') {
+            const vers = await daplink.getVersion();
+            console.log('DAPLink Version:', vers);
+          }
+        } catch {}
+
+        // Erfolgreiche Verbindung zurückgeben
+        if (i > 0) logFn?.(`🔁 Verbunden mit gedrosselter SWD-Clock: ${hz/1000} kHz`, 'text-muted');
+        return daplink;
+
+      } catch (e) {
+        lastErr = e;
+        // Aufräumen, damit der nächste Versuch „sauber" startet
+        try { await daplink?.disconnect(); } catch {}
+        // Nutzerfreundliche Meldung
+        if (/Bad response for 8\s*->\s*17/i.test(String(e?.message))) {
+          logFn?.(`⚠️ Verbindung schlug fehl (Bad response 8→17) – neuer Versuch mit ${hz === 200_000 ? 'noch niedriger' : 'niedriger'}er Clock …`, 'text-warning');
+        } else {
+          logFn?.(`⚠️ Verbindungsversuch fehlgeschlagen: ${e?.message || e}`, 'text-warning');
+        }
+        // Beim ersten Fehlschlag gleich Hinweis auf DETAILS.TXT
+        if (i === 0) await logDetailsTxt();
+      }
+    }
+
+    // Alle Versuche fehlgeschlagen
+    throw lastErr || new Error('WebUSB-Verbindung nicht möglich.');
+  }
+
+  // -------------------- Build-Pipeline --------------------
+  async function buildHexText() {
+    const T = ensureTools();
+    const baseHex = await fetchBaseHex();
+    const py = getEditorCode();
+    if (!/\S/.test(py)) throw new Error('Kein Python-Code im Editor.');
+
+    if (S.target === 'c3') {
+      // Calliope mini 3 – auto pack main.py in passende Slots/FS
+      return await T.packMainPyAuto(baseHex, py, { quiet: true });
+    }
+    // Calliope 1/2 – klassisch anfügen
+    return T.appendScriptV1(baseHex, py);
+  }
+
+  // -------------------- Öffentliche API --------------------
+  const API = {
+    init(opts = {}) {
+      if (opts.outEl) S.outEl = opts.outEl;
+      if (opts.firmwareUrls && typeof opts.firmwareUrls === 'object') {
+        S.firmwareUrls = { ...S.firmwareUrls, ...opts.firmwareUrls };
+      }
+      log('✅ CalliopeHex init');
+      return API;
+    },
+    setTargetC12() { S.target = 'c12'; log('Ziel: Calliope mini 1/2'); },
+    setTargetC3()  { S.target = 'c3';  log('Ziel: Calliope mini 3'); },
+    getTarget()    { return S.target; },
+
+    // Editor → HEX-Download
+    async buildAndDownload() {
+      try {
+        const hexText = await buildHexText();
+        const blob = new Blob([hexText], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'main.hex';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        log('⬇️ HEX heruntergeladen: main.hex');
+      } catch (e) {
+        log(`❌ ${e?.message || e}`, 'text-danger');
+        throw e;
+      }
+    },
+
+    // Editor → Gerätelaufwerk (wenn CalliopeSerial.saveHexToDrive() existiert), sonst Download
+    async buildAndSaveToDrive() {
+      try {
+        const hexText = await buildHexText();
+
+        // Reboot/Reset-Fenster ankündigen (für Auto-Reconnect über Serial)
+        try { window.CalliopeSerial?.expectReset?.(20000); } catch {}
+
+        if (window.CalliopeSerial?.saveHexToDrive) {
+          await window.CalliopeSerial.saveHexToDrive(hexText, 'main.hex');
+          log('💽 HEX auf Laufwerk kopiert (main.hex)');
+        } else {
+          // Fallback: normaler Download
+          const blob = new Blob([hexText], { type: 'text/plain' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'main.hex';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+          log('⬇️ HEX heruntergeladen (Fallback). Nach dem Kopieren aufs Gerät startet es neu.');
+        }
+      } catch (e) {
+        log(`❌ ${e?.message || e}`, 'text-danger');
+        throw e;
+      }
+    },
+
+    // Editor → WebUSB (nur C3). requestDevice() kommt als allererstes (User-Geste!)
+    async buildAndFlashWebUSB() {
+      if (S.target !== 'c3') {
+        // Für C1/2 gibt es kein WebUSB-Flash → auf Laufwerk/Download ausweichen
+        return API.buildAndSaveToDrive();
+      }
+
+      const WebUSB = window.WebUSB || window.DAPjs?.WebUSB;
+      const DAPLink = window.DAPLink || window.DAPjs?.DAPLink;
+      if (!WebUSB || !DAPLink) {
+        log('⚠️ DAPjs nicht verfügbar – verwende Save to Drive', 'text-warning');
+        return API.buildAndSaveToDrive();
+      }
+
+      let daplink = null;
+      try {
+        // 1) ***WICHTIG***: *direkt* in der Button-Geste verbinden (mit Retries)
+        daplink = await connectDAPLinkC3WithRetries((m,c)=>log(m,c));
+
+        // 2) ***Jetzt erst*** bauen (darf dauern)
+        const hexText = await buildHexText();
+
+        // 3) Flashen (bevorzugt flashHex, sonst Binärdaten)
+        if (typeof daplink.flashHex === 'function') {
+          await daplink.flashHex(hexText);
+        } else {
+          const T = ensureTools();
+          const u8 = (typeof T.hexToU8 === 'function')
+            ? T.hexToU8(hexText)
+            : new TextEncoder().encode(hexText); // Fallback
+          await daplink.flash(u8.buffer ?? u8);
+        }
+
+        // 4) Reset & Erfolg
+        await daplink.reset(false);
+        log('✅ Flash erfolgreich', 'text-success');
+
+      } catch (e) {
+        // Bekannter Fehler → klare Hinweise
+        if (/Bad response for 8\s*->\s*17/i.test(String(e?.message))) {
+          log(
+            '❌ Flash: Bad response 8→17. Prüfe bitte:<br>' +
+            '• Nur **ein** Tab/App mit Zugriff geöffnet<br>' +
+            '• Board **nicht** im <code>MAINTENANCE</code>-Modus<br>' +
+            '• USB-Kabel/Port (Datenkabel) wechseln<br>' +
+            '• DAPLink-Interface-Version in <code>DETAILS.TXT</code> (empf. ≥ 0249)<br>' +
+            '• Erneut versuchen – die SWD-Clock wurde bereits automatisch gesenkt.',
+            'text-danger'
+          );
+        } else {
+          log(`❌ Flash: ${e?.message || e}`, 'text-danger');
+        }
+
+        // Fallback anbieten
+        try {
+          log('↪️ Fallback: Speichere HEX auf Laufwerk.', 'text-muted');
+          await API.buildAndSaveToDrive();
+        } catch (e2) {
+          log(`❌ Fallback fehlgeschlagen: ${e2?.message || e2}`, 'text-danger');
+        }
+
+        throw e;
+
+      } finally {
+        // 5) Immer sauber trennen (wichtig für den nächsten Versuch)
+        try { await daplink?.disconnect(); } catch {}
+      }
+    },
+
+    // Für externe Handler: denselben Buildpfad nutzen
+    _buildHexText: () => buildHexText(),
+    get firmwareUrls() { return { ...S.firmwareUrls }; },
   };
 
+  // Globale API exportieren
   window.CalliopeHex = API;
 })();
